@@ -4,7 +4,7 @@
     <img src="https://github.com/user-attachments/assets/ac2f5702-c842-4b2e-9340-737481fa0ece" width="96" height="96" alt="Nous Research Hermes mark" />
   </a>
 
-  # Hermes OSINT Map
+# Hermes OSINT Map
 
   **The world's live signals on one globe, and an agent that can brief you on them.**
 
@@ -79,7 +79,7 @@ Every source is public and needs no account. The page's "Brief me", "Ask Hermes"
 - Headline search matches every word in any order.
 - Traffic cameras come only from official open-data feeds. They cluster into one marker per city until you zoom in, and a camera's still is fetched by its id from the operator's own image host, never from an address the page supplies.
 - Recon lookups that connect to a host refuse private, loopback, link-local and other internal addresses, before and after redirects.
-- News incidents are machine-coded from news coverage. The page and the tools say so; they show where reporting is, not verified events.
+- News incidents are machine-coded from news coverage. The page and the tools say so; they show where reporting is, not verified events. Each incident is labelled with the specific CAMEO event GDELT's codes agree on, carries a confidence built from GDELT's own signals (is it the article's subject, how specifically it was coded, how many sources reported it, how precisely it was placed), and says when its position is a country centroid or borrowed from an actor. The weakest are not drawn.
 - The page stops all polling and rendering when you leave it or the window is hidden. It respects reduced motion and works in split tiles.
 
 ## Make it yours
@@ -142,7 +142,7 @@ The plugin depends only on `httpx` and `fastapi`, which Hermes already ships.
 - Aircraft come from volunteer ADS-B receivers: coverage is thin over oceans and some regions, and military traffic only shows when it broadcasts.
 - Severe weather covers the United States only (NWS). Alerts without a mapped area are skipped.
 - Traffic cameras cover London and Singapore for now. Both publish stills, not live video, refreshed every minute or so.
-- GDELT incidents are machine-coded from news. Locations are often a city or country centroid, and labels like "Fight" describe the coverage, not a verified event.
+- GDELT incidents are machine-coded from news. A label describes the coverage, not a verified event. GDELT often places an action at a city or a country centroid, or copies an actor's location when it could not resolve one; those items are marked as approximate, scored, and dimmed or withheld according to how well they are evidenced. Events GDELT dates years back are treated as background and filtered out.
 - crt.sh, behind subdomain lookups, is often slow or down. Those lookups then fail with a clear error.
 - Without a Twelve Data key, the markets panel shows crypto only.
 

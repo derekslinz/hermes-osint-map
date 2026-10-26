@@ -53,14 +53,14 @@ are plain text (the page escapes nothing; never return HTML).
 ```
 
 | id | label | source | kinds | refresh | notes |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | `quakes` | Earthquakes | USGS `summary/2.5_day.geojson` + `4.5_week.geojson` (dedupe by id) | `earthquake` | 60 s | severity from magnitude (M2.5→0.1, M7+→1) |
 | `natural` | Natural events | NASA EONET v3 `events?status=open` | `wildfires`, `severeStorms`, `volcanoes`, `floods`, `seaLakeIce`, `dustHaze`, `landslides`, … (EONET category id) | 10 min | latest geometry point; polygons → centroid |
 | `disasters` | Disaster alerts | GDACS `gdacsapi/api/events/geteventlist/SEARCH` (recent) | `EQ`,`TC`,`FL`,`VO`,`DR`,`WF` | 10 min | severity from alertlevel Green .3 / Orange .65 / Red 1 |
 | `weather` | Severe weather (US) | NWS `api.weather.gov/alerts/active?severity=Extreme,Severe` | NWS `event` text | 5 min | polygon → centroid; zone-only alerts without geometry are dropped (counted) |
 | `aircraft` | Aircraft | adsb.lol `v2/mil` (global military) + `v2/point/{lat}/{lon}/{radius}` when `?lat=&lon=` given (radius ≤ 250 nm) | `military`, `civil` | 15 s mil, 10 s point | `alt_km` from alt_baro ft; ground traffic dropped; title = callsign or reg; props: type, reg, squawk, alt, speed |
 | `satellites` | Satellites | CelesTrak `gp.php?GROUP=…&FORMAT=json` for groups `stations`, `gps-ops`, `weather`, `military`? (only groups that exist; ≤ 400 objects total) | group name | 6 h | **items carry `omm` (the raw CelesTrak OMM dict) and lat/lon null**; the page propagates with SGP4 |
-| `incidents` | News incidents | GDELT 2.0 events: `lastupdate.txt` → latest `export.CSV.zip`; keep a rolling 3 h window (12 files) | CAMEO root: `protest`, `force`, `assault`, `fight`, `mass-violence`, `coerce`, `threaten` | 15 min | only QuadClass 3/4 roots 14,17–20; aggregate same ActionGeo point+root into one item with `count`; title like "Fight · Kharkiv, Ukraine"; url = a SOURCEURL; severity from mentions + Goldstein |
+| `incidents` | News incidents | GDELT 2.0 events: `lastupdate.txt` → latest `export.CSV.zip`; keep a rolling 3 h window (12 files) | CAMEO root: `threaten`, `protest`, `force`, `reduce-relations`, `coerce`, `assault`, `fight`, `mass-violence` | 15 min | QuadClass 3/4 roots 13–20 only. One item per (ActionGeo place, root), identified by GDELT's FeatureID when it resolved one. Title is labelled with the base code the group's rows agree on ("Arrest or detention · Ikeja, Nigeria"), falling back to the root label when they disagree or were coded to the root alone. `confidence` (0..1) from GDELT's own signals; items below 0.30 are withheld and counted in `withheld`. url = a SOURCEURL; severity from mentions + Goldstein, scaled by confidence |
 | `chokepoints` | Chokepoints | static curated list in code (≈ 15: Hormuz, Bab-el-Mandeb, Suez, Malacca, Panama, Bosporus, Gibraltar, Dover, Taiwan Strait, Lombok, Danish straits, Cape of Good Hope, Kerch, Sunda, Magellan) | `strait`, `canal` | static | props: what passes through (plain facts, no numbers you can't source) |
 
 Layer-specific query params are validated (floats in range, radius clamp) and are part of the cache key.
@@ -92,7 +92,7 @@ SP.POP.TOTL, NY.GDP.MKTP.CD, NY.GDP.PCAP.CD latest non-null via `?mrnev=1`):
 `ok: false` and a helpful sentence.
 
 | kind | target | source |
-|---|---|---|
+| --- | --- | --- |
 | `dns` | domain | dns.google/resolve: A, AAAA, MX, NS, TXT, CNAME, CAA |
 | `rdap` | domain or IP | rdap.org (follow redirects): registrar, created/expires, status, nameservers / network name, CIDR, org |
 | `tls` | domain[:port] | direct TLS handshake (stdlib ssl, SNI, 8 s timeout): subject, issuer, SANs (≤ 50), validity, days left, protocol, cipher |
@@ -124,19 +124,21 @@ One shared TTL cache per (route, params) in the process; refresh only when asked
 while open; tools call on demand). Honest User-Agent `hermes-osint-map/0.1 (+https://github.com/Adolanium/hermes-osint-map)`.
 Timeouts 10–20 s. Bounded memory everywhere (cap items per layer at 5,000; aircraft at 3,000).
 
-## Backend notes (as implemented, 2026-10-23)
+## Backend notes (as implemented, 2026-10-26)
 
 Deviations from the text above:
 
-- `incidents` keeps CAMEO roots **13, 14, 15, 17, 18, 19, 20** (QuadClass 3 or 4), not just 14 and 17–20, so
-  every kind in the table can occur (`threaten` = 13, `force` = 15). Root 16 (reduce relations) is left out.
 - `chokepoints` uses kind **`cape`** for the Cape of Good Hope (it is neither a strait nor a canal).
 
 Additive fields (safe to ignore):
 
-- `/layer/{id}` also returns `count`; `weather` adds `dropped` (zone-only alerts without geometry).
-  `incidents` items carry `count` (reports folded into the item). Item ids are stable:
-  `incidents:{root}:{lat},{lon}`, `aircraft:{icao hex}`, `satellites:{norad}`.
+- `/layer/{id}` also returns `count`; `weather` adds `dropped` (zone-only alerts without geometry),
+  `incidents` adds `withheld` (groups too weakly evidenced to draw). `incidents` items carry `count`
+  (reports folded into the item) and `confidence` (0..1); their props include the CAMEO code the label
+  is based on, the confidence band, and a note when GDELT placed the action at a country centroid or
+  borrowed an actor's location. Item ids are stable:
+  `incidents:{root}:geo:{fips}:{featureid}` when GDELT resolved a place, otherwise
+  `incidents:{root}:coord:{fips}:{lat},{lon}`, `aircraft:{icao hex}`, `satellites:{norad}`.
 - A layer whose upstream is down with no cached data answers `ok: true, status: "error", items: []`.
   Bad query params and unknown layer ids answer `ok: false` (400 / 404).
 - `/news` adds `status` (`ok`/`stale`), `error` and `feeds: [{source, status, error, count}]`; it answers
@@ -175,7 +177,7 @@ items have `country: null` (EONET gives none). EONET is queried with `limit=1500
 Layer `cameras` (label "Traffic cameras", refresh 1 h): official open-data cameras only.
 
 | Source | List | Images | Licence |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Transport for London JamCams | `api.tfl.gov.uk/Place/Type/JamCam` | `s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/` | Powered by TfL Open Data |
 | Singapore LTA traffic images | `api.data.gov.sg/v1/transport/traffic-images` | `images.data.gov.sg/` | Singapore Open Data Licence v1.0 |
 

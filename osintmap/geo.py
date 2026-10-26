@@ -254,7 +254,8 @@ ZW ZWE ZI Zimbabwe
 """
 
 _ISO3: dict[str, str] = {}
-_FIPS: dict[str, str] = {"GZ": "PS"}  # FIPS splits Palestine into West Bank (WE) and Gaza (GZ)
+_FIPS: dict[str, str] = {"GZ": "PS", "RB": "RS"}  # FIPS splits Palestine into West Bank (WE) and Gaza (GZ);
+# GDELT's geo fields use the retired code RB for Serbia.
 _NAMES: dict[str, str] = {}
 NAMES: dict[str, str] = {}  # alpha-2 → display name
 for _line in _TABLE.strip().splitlines():

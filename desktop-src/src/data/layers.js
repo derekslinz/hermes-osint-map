@@ -19,7 +19,7 @@ export const LAYERS = [
   { id: 'weather', label: 'Severe weather (US)', shape: 'square', cssVar: '--ui-blue', fallbackVar: '--ui-accent', fadeAfter: null, size: [5, 9],
     hint: 'US National Weather Service extreme and severe alerts' },
   { id: 'incidents', label: 'News incidents', shape: 'hexagon', cssVar: '--ui-yellow', fallbackVar: '--ui-orange', fadeAfter: 3 * H, size: [5, 13],
-    hint: 'GDELT: protests, fighting, assaults and threats as coded automatically from news coverage, last 3 hours. Shows where reporting is, not verified events' },
+    hint: 'GDELT: coded automatically from news coverage in the last 3 hours, labelled with the CAMEO event GDELT\'s codes agree on. Each item says how far it can be trusted; the weakest are not drawn. Shows where reporting is, not verified events' },
   { id: 'aircraft', label: 'Aircraft', shape: 'dart', cssVar: '--ui-cyan', fallbackVar: '--ui-blue', fadeAfter: null, size: [6, 8],
     hint: 'adsb.lol: military aircraft worldwide, plus all traffic near the centre of the view when zoomed in' },
   { id: 'satellites', label: 'Satellites', shape: 'plus', cssVar: '--ui-purple', fallbackVar: '--ui-accent', fadeAfter: null, size: [5, 5],

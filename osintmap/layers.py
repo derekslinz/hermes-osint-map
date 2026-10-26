@@ -146,6 +146,13 @@ def _gdelt_bytes(url: str) -> bytes:
 _window = gdelt.Window(_gdelt_text, _gdelt_bytes)
 
 
+def _gdelt() -> dict:
+    # ``withheld`` is the count of groups GDELT's own signals say are too weak to draw; the layer
+    # reports it so the health panel can say the filter is working, not that the feed is thin.
+    found, withheld = _window.refresh()
+    return _items(found, withheld=withheld)
+
+
 # --- Parameters ------------------------------------------------------------------------------------
 
 
@@ -199,7 +206,7 @@ LAYERS: dict[str, Layer] = {layer.id: layer for layer in (
           cap=MAX_SATELLITES),
     Layer("incidents", "News incidents", "GDELT", "https://www.gdeltproject.org",
           "The GDELT Project (cite GDELT when reusing)", 900,
-          lambda p: [Part("incidents", 900, "GDELT", lambda: _items(_window.refresh()), _cache)]),
+          lambda p: [Part("incidents", 900, "GDELT", _gdelt, _cache)]),
     Layer("cameras", "Traffic cameras", "TfL, data.gov.sg", "https://api-portal.tfl.gov.uk",
           "Powered by TfL Open Data; Singapore traffic images from data.gov.sg (Singapore Open Data Licence)", 3600,
           lambda p: [Part("cameras:tfl", 3600, "TfL", cameras.loader(cameras.TFL, cameras.parse_tfl, "TfL"), _cache),

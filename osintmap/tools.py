@@ -7,7 +7,7 @@ import json
 import time
 from typing import Any, Callable
 
-from . import geo, layers, panels, recon
+from . import gdelt, geo, layers, panels, recon
 from .http import UpstreamError, describe
 from .parsers import number
 
@@ -27,13 +27,15 @@ SCHEMAS = {
         "A current world situation brief from public sources: item counts and the most severe items per map layer "
         "(earthquakes, natural events, disaster alerts, US severe weather, military aircraft, news incidents), "
         "the planetary Kp index and the top headlines. News incidents are machine-coded from news coverage (GDELT): "
-        "they show where reporting is, not verified events. Takes no arguments; the first call can take ~20 s.",
+        "each carries a CAMEO event label and a confidence from GDELT's own reliability signals, and the weakest are "
+        "withheld. They show where reporting is, not verified events. Takes no arguments; the first call can take ~20 s.",
         {},
     ),
     "osint_events": _schema(
         "osint_events",
         "List current map items, most severe first, filtered by layer, country and/or a point and radius. "
-        "Items in the incidents layer are machine-coded from news coverage (GDELT), not verified events.",
+        "Items in the incidents layer are machine-coded from news coverage (GDELT), not verified events: each line "
+        "shows the CAMEO label GDELT's codes agree on and a confidence, so weigh low-confidence items accordingly.",
         {
             "layer": {"type": "string", "enum": list(layers.LAYERS),
                       "description": "One layer; omit for every layer except satellites."},
@@ -86,6 +88,9 @@ def _item_line(entry: dict) -> str:
         bits.append(f"at {_when(entry['time'])}")
     if entry.get("lat") is not None:
         bits.append(f"{entry['lat']:.2f},{entry['lon']:.2f}")
+    if entry.get("confidence") is not None:
+        # GDELT's own signals, quoted so the model can weigh an incident instead of taking it as fact.
+        bits.append(f"confidence {entry['confidence']:.0%} ({gdelt.confidence_band(entry['confidence'])})")
     if entry.get("url"):
         bits.append(entry["url"])
     return "- " + " ".join(bits)
@@ -115,7 +120,9 @@ def _guarded(handler: Callable[[dict], str]) -> Callable[..., str]:
 def _layer_status(layer_id: str, answer: dict) -> str:
     layer = layers.LAYERS[layer_id]
     state = "" if answer["status"] == "ok" else f" ({answer['status']}: {answer['error']})"
-    return f"{layer.label} ({layer.source}): {answer['count']} items{state}"
+    withheld = answer.get("withheld") or answer.get("dropped")
+    extra = f", {withheld} filtered out as too weak to place" if withheld else ""
+    return f"{layer.label} ({layer.source}): {answer['count']} items{extra}{state}"
 
 
 # --- Handlers --------------------------------------------------------------------------------------
