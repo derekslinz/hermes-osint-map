@@ -86,6 +86,7 @@ ${LAYER_VARS}
 .hom-btn--primary:hover { background: color-mix(in oklab, var(--ui-accent) 86%, var(--ui-text-primary)); color: var(--ui-bg-editor, var(--ui-base)); }
 .hom-btn--ghost { border: 1px solid var(--hom-line); height: 34px; padding: 0 14px; }
 .hom-btn .codicon { font-size: 14px; }
+.hom-res-label { font: 600 9px/1 var(--font-mono, ui-monospace, monospace); letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
 .hom-link {
   appearance: none; border: 0; background: none; padding: 0; font: inherit; cursor: pointer;
   color: var(--ui-text-secondary); text-decoration: underline; text-decoration-color: var(--hom-line); text-underline-offset: 2px;

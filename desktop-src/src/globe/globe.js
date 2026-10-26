@@ -24,7 +24,7 @@ import {
   Vector3,
   WebGLRenderer
 } from 'three'
-import { countryRaster, indexAt, RASTER_HEIGHT, RASTER_WIDTH } from '../geo/world.js'
+import { countryRaster, indexAt, rasterWidth, rasterHeight, setResolution as setWorldResolution } from '../geo/world.js'
 import {
   backdropFragment,
   backdropVertex,
@@ -80,7 +80,7 @@ export function createGlobe(canvas, options) {
   let pixelRatio = 1
 
   // --- Textures -------------------------------------------------------------------------------
-  const idTexture = new DataTexture(countryRaster(), RASTER_WIDTH, RASTER_HEIGHT, RedFormat, UnsignedByteType)
+  const idTexture = new DataTexture(countryRaster(), rasterWidth(), rasterHeight(), RedFormat, UnsignedByteType)
   idTexture.minFilter = NearestFilter
   idTexture.magFilter = NearestFilter
   idTexture.generateMipmaps = false
@@ -124,7 +124,7 @@ export function createGlobe(canvas, options) {
   const earthUniforms = {
     uIds: { value: idTexture },
     uHeat: { value: heatTexture },
-    uIdSize: { value: [RASTER_WIDTH, RASTER_HEIGHT] },
+    uIdSize: { value: [rasterWidth(), rasterHeight()] },
     uHover: { value: -1 },
     uSelected: { value: -1 },
     uFocus: { value: 0 },
@@ -682,6 +682,16 @@ export function createGlobe(canvas, options) {
     setDither(value) {
       earthUniforms.uDither.value = value ? 1 : 0
       backdropUniforms.uDither.value = value ? 1 : 0
+      wake()
+    },
+    /** Switch the active map resolution ('4096x2048' or '8192x4096') and re-upload the texture. */
+    setResolution(size) {
+      setWorldResolution(size)
+      idTexture.image = countryRaster()
+      idTexture.width = rasterWidth()
+      idTexture.height = rasterHeight()
+      earthUniforms.uIdSize.value = [rasterWidth(), rasterHeight()]
+      idTexture.needsUpdate = true
       wake()
     },
     setReducedMotion(value) {

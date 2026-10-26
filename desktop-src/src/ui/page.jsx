@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Codicon, createBudgetedLoop, GlyphSpinner, haptic, Tip, useTheme, useValue } from '@hermes/plugin-sdk'
 import { CAMERA_DETAIL_DIST, clusterItems, LAYERS, layerOf, toMarker } from '../data/layers.js'
 import { orbitPath } from '../data/satellites.js'
-import { countryAt, countryByCode, countryByIndex, countryName } from '../geo/world.js'
+import { countryAt, countryByCode, countryByIndex, countryName, resolution as worldResolution, setResolution as setWorldResolution } from '../geo/world.js'
 import { createGlobe } from '../globe/globe.js'
 import { buildPalette, createColorResolver } from '../globe/palette.js'
 import { usePrefersReducedMotion, useThrottled } from './kit.jsx'
@@ -46,7 +46,14 @@ export function OsintPage({ controller, rest, ask, openExternal }) {
     g.setMask(LAYERS.map(l => !!settings.layers[l.id]))
     g.setDither(settings.dither)
     g.setAutoRotate(settings.autoRotate)
+    g.setResolution(settings.resolution)
   }, [settings])
+
+  // Initialise the baked raster resolution from saved settings before the globe mounts.
+  useEffect(() => {
+    const r = settings.get().resolution
+    if (r && r !== worldResolution()) setWorldResolution(r)
+  }, [])
   useEffect(() => globeRef.current?.setReducedMotion(reduced), [reduced])
 
   const selectItem = useCallback(
@@ -538,6 +545,12 @@ function Dock({ controller, settings, narrow, openRail, setOpenRail, recon, setR
       <Tip label="Dithered or smooth globe (D)">
         <button type="button" className="hom-btn" aria-pressed={settings.dither} onClick={() => controller.setDither(!settings.dither)} aria-label="Dithered globe">
           <Codicon name="symbol-color" />
+        </button>
+      </Tip>
+      <Tip label="Map resolution">
+        <button type="button" className="hom-btn" aria-pressed={settings.resolution === '8192x4096'} onClick={() => controller.setResolution(settings.resolution === '4096x2048' ? '8192x4096' : '4096x2048')} aria-label="Map resolution">
+          <Codicon name="device-desktop" />
+          <span className="hom-res-label">{settings.resolution === '8192x4096' ? 'High' : 'Standard'}</span>
         </button>
       </Tip>
       <Tip label="Refresh every layer now">

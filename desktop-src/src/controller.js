@@ -15,7 +15,8 @@ const DEFAULTS = {
   layers: Object.fromEntries(LAYERS.map(l => [l.id, l.id !== 'weather'])),
   dither: true,
   autoRotate: true,
-  alerts: true
+  alerts: true,
+  resolution: '4096x2048'
 }
 
 /**
@@ -289,6 +290,7 @@ export function createController({ atom, rest, schedule, storage, notify }) {
     },
     setDither: value => update({ dither: value }),
     setAutoRotate: value => update({ autoRotate: value }),
+    setResolution: value => update({ resolution: value }),
     setAlerts: value => update({ alerts: value }),
     refresh(id) {
       if (id) slot(id).next = 0
